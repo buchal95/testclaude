@@ -1,5 +1,5 @@
 """
-Flask web application for the Networking Tool.
+Flask web application for GiveFirst.
 Based on "Never Eat Alone" by Keith Ferrazzi.
 """
 
@@ -11,29 +11,29 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from . import database as db
 
 CIRCLE_LABELS = {
-    "inner_circle": "Vnitrni kruh",
-    "close": "Blizci",
-    "acquaintance": "Znami",
-    "dormant": "Spici kontakty",
+    "inner_circle": "Vnitřní kruh",
+    "close": "Blízcí",
+    "acquaintance": "Známí",
+    "dormant": "Spící kontakty",
 }
 
 INTERACTION_TYPES = {
-    "meal": "Jidlo",
-    "coffee": "Kava",
+    "meal": "Jídlo",
+    "coffee": "Káva",
     "call": "Hovor",
     "email": "E-mail",
     "event": "Akce",
-    "intro": "Predstaveni",
-    "other": "Jine",
+    "intro": "Představení",
+    "other": "Jiné",
 }
 
 GENEROSITY_CATEGORIES = {
-    "intro": "Predstaveni",
+    "intro": "Představení",
     "advice": "Rada",
     "resource": "Zdroj/informace",
     "help": "Pomoc",
-    "gift": "Darek",
-    "referral": "Doporuceni",
+    "gift": "Dárek",
+    "referral": "Doporučení",
 }
 
 
@@ -55,13 +55,11 @@ def create_app():
         db.DB_PATH = db_path
     db.init_db()
 
-    # Load user before each request
     @app.before_request
     def load_user():
         user_id = session.get("user_id")
         g.user = db.get_user(user_id) if user_id else None
 
-    # Template helpers
     @app.template_filter("circle_label")
     def circle_label(value):
         return CIRCLE_LABELS.get(value, value)
@@ -97,22 +95,22 @@ def create_app():
             display_name = request.form.get("display_name", "").strip() or None
 
             if not username or not password:
-                flash("Vyplnte uzivatelske jmeno a heslo.", "error")
+                flash("Vyplňte uživatelské jméno a heslo.", "error")
                 return render_template("register.html")
             if len(password) < 6:
-                flash("Heslo musi mit alespon 6 znaku.", "error")
+                flash("Heslo musí mít alespoň 6 znaků.", "error")
                 return render_template("register.html")
             if password != password2:
-                flash("Hesla se neshoduji.", "error")
+                flash("Hesla se neshodují.", "error")
                 return render_template("register.html")
 
             user_id = db.create_user(username, password, display_name=display_name)
             if not user_id:
-                flash("Uzivatelske jmeno jiz existuje.", "error")
+                flash("Uživatelské jméno již existuje.", "error")
                 return render_template("register.html")
 
             session["user_id"] = user_id
-            flash("Registrace uspesna! Vitej v networking nastroji.", "success")
+            flash("Registrace úspěšná! Vítej v GiveFirst.", "success")
             return redirect(url_for("dashboard"))
         return render_template("register.html")
 
@@ -125,17 +123,17 @@ def create_app():
             password = request.form["password"]
             user = db.authenticate_user(username, password)
             if not user:
-                flash("Spatne uzivatelske jmeno nebo heslo.", "error")
+                flash("Špatné uživatelské jméno nebo heslo.", "error")
                 return render_template("login.html")
             session["user_id"] = user["id"]
-            flash(f"Vitej zpet, {user['display_name'] or user['username']}!", "success")
+            flash(f"Vítej zpět, {user['display_name'] or user['username']}!", "success")
             return redirect(url_for("dashboard"))
         return render_template("login.html")
 
     @app.route("/logout")
     def logout():
         session.clear()
-        flash("Odhlaseni uspesne.", "success")
+        flash("Odhlášení úspěšné.", "success")
         return redirect(url_for("login"))
 
     # --- Dashboard ---
@@ -178,7 +176,7 @@ def create_app():
                 interests=request.form.get("interests") or None,
                 goals=request.form.get("goals") or None,
             )
-            flash("Kontakt pridan!", "success")
+            flash("Kontakt přidán!", "success")
             return redirect(url_for("contact_detail", contact_id=contact_id))
         return render_template("contact_form.html", contact=None)
 
@@ -218,7 +216,7 @@ def create_app():
                 interests=request.form.get("interests") or None,
                 goals=request.form.get("goals") or None,
             )
-            flash("Kontakt aktualizovan!", "success")
+            flash("Kontakt aktualizován!", "success")
             return redirect(url_for("contact_detail", contact_id=contact_id))
         return render_template("contact_form.html", contact=contact)
 
@@ -228,7 +226,7 @@ def create_app():
         contact = db.get_contact(contact_id, g.user["id"])
         if contact:
             db.delete_contact(contact_id, g.user["id"])
-            flash(f"Kontakt '{contact['name']}' smazan.", "success")
+            flash(f"Kontakt '{contact['name']}' smazán.", "success")
         return redirect(url_for("contacts"))
 
     # --- Interactions ---
@@ -254,7 +252,7 @@ def create_app():
             follow_up_needed=follow_up,
             follow_up_by=follow_up_by,
         )
-        flash("Interakce zaznamenana!", "success")
+        flash("Interakce zaznamenána!", "success")
         return redirect(url_for("contact_detail", contact_id=contact_id))
 
     # --- Follow-ups ---
@@ -270,7 +268,7 @@ def create_app():
     @login_required
     def followup_done(interaction_id):
         db.mark_followup_done(interaction_id, g.user["id"])
-        flash("Follow-up splnen!", "success")
+        flash("Follow-up splněn!", "success")
         next_url = request.form.get("next", url_for("followups"))
         return redirect(next_url)
 
@@ -290,7 +288,7 @@ def create_app():
             category=request.form.get("category") or None,
             date=request.form.get("date") or None,
         )
-        flash("Stedrost zaznamenana!", "success")
+        flash("Štědrost zaznamenána!", "success")
         return redirect(url_for("contact_detail", contact_id=contact_id))
 
     # --- Goals ---
@@ -308,17 +306,15 @@ def create_app():
             goal=request.form["goal"],
             target_date=request.form.get("target_date") or None,
         )
-        flash("Cil pridan!", "success")
+        flash("Cíl přidán!", "success")
         return redirect(url_for("contact_detail", contact_id=contact_id))
 
     @app.route("/goal/<int:goal_id>/done", methods=["POST"])
     @login_required
     def goal_done(goal_id):
         db.complete_goal(goal_id, g.user["id"])
-        flash("Cil splnen!", "success")
+        flash("Cíl splněn!", "success")
         return redirect(request.form.get("next", url_for("dashboard")))
-
-    # --- Goals overview ---
 
     @app.route("/goals")
     @login_required
@@ -326,8 +322,6 @@ def create_app():
         show_all = request.args.get("all") == "1"
         goal_list = db.get_goals(g.user["id"], pending_only=not show_all)
         return render_template("goals.html", goals=goal_list, show_all=show_all)
-
-    # --- Tips ---
 
     @app.route("/tips")
     @login_required

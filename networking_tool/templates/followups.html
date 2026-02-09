@@ -2,16 +2,16 @@
 {% block title %}Follow-upy{% endblock %}
 {% block content %}
 <div class="page-header">
-    <h1>Cekajici follow-upy</h1>
+    <h1>Čekající follow-upy</h1>
 </div>
 
 <div class="tip-card" style="margin-bottom: 1.5rem;">
     <h3>Pravidlo 24 hodin</h3>
-    <p>Po kazdem setkani posli follow-up do 24 hodin. Kratky email, SMS, nebo LinkedIn zprava. Ukazuje to, ze ti na vztahu zalezi.</p>
+    <p>Po každém setkání pošli follow-up do 24 hodin. Krátký e-mail, SMS, nebo LinkedIn zpráva. Ukazuje to, že ti na vztahu záleží.</p>
 </div>
 
 {% if followups %}
-<div class="card" style="padding: 0;">
+<div class="card" style="padding: 0; overflow: hidden;">
     <table>
         <thead>
             <tr><th>Kontakt</th><th>Kruh</th><th>Typ</th><th>Datum interakce</th><th>Follow-up do</th><th>Stav</th><th></th></tr>
@@ -27,14 +27,14 @@
                 {% if f.follow_up_by and f.follow_up_by < today %}
                     <span class="badge badge-danger">{{ f.follow_up_by }}</span>
                 {% else %}
-                    {{ f.follow_up_by or '-' }}
+                    {{ f.follow_up_by or '—' }}
                 {% endif %}
             </td>
             <td>
                 {% if f.follow_up_by and f.follow_up_by < today %}
-                    <span class="badge badge-danger">Zpozden</span>
+                    <span class="badge badge-danger">Zpožděn</span>
                 {% else %}
-                    <span class="badge badge-warning">Ceka</span>
+                    <span class="badge badge-warning">Čeká</span>
                 {% endif %}
             </td>
             <td>
@@ -49,8 +49,8 @@
 </div>
 {% else %}
 <div class="empty">
-    <p style="font-size: 1.2rem;">Zadne cekajici follow-upy!</p>
-    <p style="margin-top: 0.5rem;">Skvela prace - vsechny vztahy jsou osetrene.</p>
+    <p>Žádné čekající follow-upy!</p>
+    <p style="margin-top: 0.5rem;">Skvělá práce — všechny vztahy jsou ošetřené.</p>
 </div>
 {% endif %}
 {% endblock %}

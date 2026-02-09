@@ -1,23 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Prihlaseni{% endblock %}
+{% block title %}Přihlášení{% endblock %}
 {% block content %}
-<div style="max-width: 420px; margin: 4rem auto;">
-    <div class="card">
-        <h2 style="text-align: center; margin-bottom: 0.5rem;">Prihlaseni</h2>
-        <p style="text-align: center; color: var(--text-dim); margin-bottom: 1.5rem;">Networking Tool - Nikdy Nejez Sam</p>
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h2>Přihlášení</h2>
+        <p class="subtitle">GiveFirst — Buduj vztahy, které mají smysl</p>
         <form method="post">
             <div class="form-group">
-                <label>Uzivatelske jmeno</label>
-                <input type="text" name="username" required autofocus>
+                <label>Uživatelské jméno</label>
+                <input type="text" name="username" required autofocus placeholder="Zadej uživatelské jméno">
             </div>
             <div class="form-group">
                 <label>Heslo</label>
-                <input type="password" name="password" required>
+                <input type="password" name="password" required placeholder="Zadej heslo">
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Prihlasit se</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Přihlásit se</button>
         </form>
-        <p style="text-align: center; margin-top: 1rem; color: var(--text-dim);">
-            Nemas ucet? <a href="{{ url_for('register') }}">Zaregistruj se</a>
+        <p class="auth-footer">
+            Nemáš účet? <a href="{{ url_for('register') }}">Zaregistruj se</a>
         </p>
     </div>
 </div>

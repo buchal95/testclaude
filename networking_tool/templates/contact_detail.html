@@ -16,20 +16,20 @@
         <h2>Informace</h2>
         <dl class="detail-grid">
             <dt>Kruh</dt><dd><span class="badge badge-{{ contact.circle }}">{{ contact.circle|circle_label }}</span></dd>
-            <dt>Firma</dt><dd>{{ contact.company or '-' }}</dd>
-            <dt>Pozice</dt><dd>{{ contact.role or '-' }}</dd>
-            <dt>E-mail</dt><dd>{{ contact.email or '-' }}</dd>
-            <dt>Telefon</dt><dd>{{ contact.phone or '-' }}</dd>
-            <dt>Zajmy</dt><dd>{{ contact.interests or '-' }}</dd>
-            <dt>Jak jsme se potkali</dt><dd>{{ contact.how_we_met or '-' }}</dd>
-            <dt>Cile</dt><dd>{{ contact.goals or '-' }}</dd>
-            <dt>Poznamky</dt><dd>{{ contact.notes or '-' }}</dd>
-            <dt>Pridan</dt><dd>{{ contact.created_at }}</dd>
+            <dt>Firma</dt><dd>{{ contact.company or '—' }}</dd>
+            <dt>Pozice</dt><dd>{{ contact.role or '—' }}</dd>
+            <dt>E-mail</dt><dd>{{ contact.email or '—' }}</dd>
+            <dt>Telefon</dt><dd>{{ contact.phone or '—' }}</dd>
+            <dt>Zájmy</dt><dd>{{ contact.interests or '—' }}</dd>
+            <dt>Jak jsme se potkali</dt><dd>{{ contact.how_we_met or '—' }}</dd>
+            <dt>Cíle</dt><dd>{{ contact.goals or '—' }}</dd>
+            <dt>Poznámky</dt><dd>{{ contact.notes or '—' }}</dd>
+            <dt>Přidán</dt><dd>{{ contact.created_at }}</dd>
         </dl>
     </div>
 
     <div>
-        <!-- Add interaction -->
+        <!-- Zaznamenat interakci -->
         <div class="card">
             <h2>Zaznamenat interakci</h2>
             <form method="post" action="{{ url_for('interaction_add', contact_id=contact.id) }}">
@@ -49,12 +49,12 @@
                 </div>
                 <div class="form-group">
                     <label>Popis</label>
-                    <input type="text" name="description" placeholder="O cem jste mluvili...">
+                    <input type="text" name="description" placeholder="O čem jste mluvili...">
                 </div>
                 <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.75rem;">
                     <div class="checkbox-group">
                         <input type="checkbox" name="follow_up" id="fu_check">
-                        <label for="fu_check" style="margin: 0;">Potrebuje follow-up</label>
+                        <label for="fu_check" style="margin: 0; text-transform: none; letter-spacing: normal;">Potřebuje follow-up</label>
                     </div>
                     <div class="form-group" style="margin: 0; flex: 1;">
                         <input type="date" name="follow_up_by" placeholder="Do kdy">
@@ -64,15 +64,15 @@
             </form>
         </div>
 
-        <!-- Add generosity -->
+        <!-- Zaznamenat štědrost -->
         <div class="card">
-            <h2>Zaznamenat stedrost</h2>
+            <h2>Zaznamenat štědrost</h2>
             <form method="post" action="{{ url_for('give_add', contact_id=contact.id) }}">
                 <div class="grid grid-2">
                     <div class="form-group">
                         <label>Kategorie</label>
                         <select name="category">
-                            <option value="">-- vyber --</option>
+                            <option value="">— vyber —</option>
                             {% for key, label in generosity_categories.items() %}
                             <option value="{{ key }}">{{ label }}</option>
                             {% endfor %}
@@ -84,35 +84,35 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Co jsi udelal/dal *</label>
-                    <input type="text" name="description" required placeholder="Predstavil jsem ho...">
+                    <label>Co jsi udělal/dal *</label>
+                    <input type="text" name="description" required placeholder="Představil jsem ho...">
                 </div>
                 <button type="submit" class="btn btn-primary">Zaznamenat</button>
             </form>
         </div>
 
-        <!-- Add goal -->
+        <!-- Přidat cíl vztahu -->
         <div class="card">
-            <h2>Pridat cil vztahu</h2>
+            <h2>Přidat cíl vztahu</h2>
             <form method="post" action="{{ url_for('goal_add', contact_id=contact.id) }}">
                 <div class="form-group">
-                    <label>Cil *</label>
-                    <input type="text" name="goal" required placeholder="Domluvit spolecny projekt...">
+                    <label>Cíl *</label>
+                    <input type="text" name="goal" required placeholder="Domluvit společný projekt...">
                 </div>
                 <div class="form-group">
                     <label>Do kdy</label>
                     <input type="date" name="target_date">
                 </div>
-                <button type="submit" class="btn btn-primary">Pridat cil</button>
+                <button type="submit" class="btn btn-primary">Přidat cíl</button>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Interactions history -->
+<!-- Historie interakcí -->
 {% if interactions %}
 <div class="card">
-    <h2>Historie interakci</h2>
+    <h2>Historie interakcí</h2>
     <table>
         <thead><tr><th>Datum</th><th>Typ</th><th>Popis</th><th>Follow-up</th><th></th></tr></thead>
         <tbody>
@@ -120,13 +120,13 @@
         <tr>
             <td>{{ i.date }}</td>
             <td>{{ i.type|interaction_label }}</td>
-            <td>{{ i.description or '-' }}</td>
+            <td>{{ i.description or '—' }}</td>
             <td>
                 {% if i.follow_up_needed %}
                     {% if i.follow_up_done %}
                         <span class="badge badge-success">Hotovo</span>
                     {% elif i.follow_up_by and i.follow_up_by < today %}
-                        <span class="badge badge-danger">Zpozden ({{ i.follow_up_by }})</span>
+                        <span class="badge badge-danger">Zpožděn ({{ i.follow_up_by }})</span>
                     {% else %}
                         <span class="badge badge-warning">Do {{ i.follow_up_by or '?' }}</span>
                     {% endif %}
@@ -147,17 +147,17 @@
 </div>
 {% endif %}
 
-<!-- Generosity history -->
+<!-- Štědrost -->
 {% if generosity %}
 <div class="card">
-    <h2>Stedrost</h2>
+    <h2>Štědrost</h2>
     <table>
         <thead><tr><th>Datum</th><th>Kategorie</th><th>Popis</th></tr></thead>
         <tbody>
         {% for g in generosity %}
         <tr>
             <td>{{ g.date }}</td>
-            <td>{{ g.category|generosity_label if g.category else '-' }}</td>
+            <td>{{ g.category|generosity_label if g.category else '—' }}</td>
             <td>{{ g.description }}</td>
         </tr>
         {% endfor %}
@@ -166,22 +166,22 @@
 </div>
 {% endif %}
 
-<!-- Goals -->
+<!-- Cíle vztahu -->
 {% if goals %}
 <div class="card">
-    <h2>Cile vztahu</h2>
+    <h2>Cíle vztahu</h2>
     <table>
-        <thead><tr><th>Cil</th><th>Do kdy</th><th>Stav</th><th></th></tr></thead>
+        <thead><tr><th>Cíl</th><th>Do kdy</th><th>Stav</th><th></th></tr></thead>
         <tbody>
         {% for g in goals %}
         <tr>
             <td>{{ g.goal }}</td>
-            <td>{{ g.target_date or '-' }}</td>
+            <td>{{ g.target_date or '—' }}</td>
             <td>
                 {% if g.completed %}
-                    <span class="badge badge-success">Splneno</span>
+                    <span class="badge badge-success">Splněno</span>
                 {% else %}
-                    <span class="badge badge-warning">Otevreny</span>
+                    <span class="badge badge-warning">Otevřený</span>
                 {% endif %}
             </td>
             <td>

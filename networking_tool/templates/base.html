@@ -234,6 +234,7 @@
 <body>
     <nav>
         <span class="brand">Nikdy Nejez Sam</span>
+        {% if current_user %}
         <div class="links">
             <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
             <a href="{{ url_for('contacts') }}" class="{{ 'active' if request.endpoint in ('contacts', 'contact_detail', 'contact_new', 'contact_edit') }}">Kontakty</a>
@@ -241,6 +242,11 @@
             <a href="{{ url_for('goals') }}" class="{{ 'active' if request.endpoint == 'goals' }}">Cile</a>
             <a href="{{ url_for('tips') }}" class="{{ 'active' if request.endpoint == 'tips' }}">Tipy</a>
         </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 0.75rem;">
+            <span style="color: var(--text-dim); font-size: 0.85rem;">{{ current_user.display_name or current_user.username }}</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm">Odhlasit</a>
+        </div>
+        {% endif %}
     </nav>
     <main>
         {% with messages = get_flashed_messages(with_categories=true) %}

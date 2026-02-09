@@ -1,12 +1,14 @@
 """
 Database layer for the Networking Tool.
-Uses SQLite for persistent storage of contacts, interactions, goals, and generosity acts.
+Uses SQLite for persistent storage of users, contacts, interactions, goals, and generosity acts.
 """
 
 import sqlite3
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 DB_PATH = os.path.join(Path.home(), ".networking_tool.db")
@@ -24,28 +26,37 @@ def init_db(db_path=None):
     cursor = conn.cursor()
 
     cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            email TEXT UNIQUE,
+            password_hash TEXT NOT NULL,
+            display_name TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS contacts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             email TEXT,
             phone TEXT,
             company TEXT,
             role TEXT,
             circle TEXT NOT NULL DEFAULT 'acquaintance',
-            -- circle: inner_circle, close, acquaintance, dormant
             notes TEXT,
             how_we_met TEXT,
             interests TEXT,
             goals TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS interactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             contact_id INTEGER NOT NULL,
             type TEXT NOT NULL,
-            -- type: meal, coffee, call, email, event, intro, other
             description TEXT,
             date TEXT NOT NULL DEFAULT (date('now')),
             follow_up_needed INTEGER NOT NULL DEFAULT 0,
@@ -60,7 +71,6 @@ def init_db(db_path=None):
             contact_id INTEGER NOT NULL,
             description TEXT NOT NULL,
             category TEXT,
-            -- category: intro, advice, resource, help, gift, referral
             date TEXT NOT NULL DEFAULT (date('now')),
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE
@@ -82,18 +92,55 @@ def init_db(db_path=None):
     conn.close()
 
 
+# --- Users ---
+
+def create_user(username, password, email=None, display_name=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO users (username, password_hash, email, display_name)
+            VALUES (?, ?, ?, ?)
+        """, (username, generate_password_hash(password), email, display_name))
+        user_id = cursor.lastrowid
+        conn.commit()
+        return user_id
+    except sqlite3.IntegrityError:
+        return None
+    finally:
+        conn.close()
+
+
+def authenticate_user(username, password):
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM users WHERE username = ?", (username,)
+    ).fetchone()
+    conn.close()
+    if row and check_password_hash(row["password_hash"], password):
+        return dict(row)
+    return None
+
+
+def get_user(user_id):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 # --- Contacts ---
 
-def add_contact(name, email=None, phone=None, company=None, role=None,
+def add_contact(user_id, name, email=None, phone=None, company=None, role=None,
                 circle="acquaintance", notes=None, how_we_met=None,
                 interests=None, goals=None):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO contacts (name, email, phone, company, role, circle, notes,
+        INSERT INTO contacts (user_id, name, email, phone, company, role, circle, notes,
                               how_we_met, interests, goals)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (name, email, phone, company, role, circle, notes, how_we_met,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (user_id, name, email, phone, company, role, circle, notes, how_we_met,
           interests, goals))
     contact_id = cursor.lastrowid
     conn.commit()
@@ -101,38 +148,44 @@ def add_contact(name, email=None, phone=None, company=None, role=None,
     return contact_id
 
 
-def get_contact(contact_id):
+def get_contact(contact_id, user_id):
     conn = get_connection()
-    row = conn.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM contacts WHERE id = ? AND user_id = ?",
+        (contact_id, user_id)
+    ).fetchone()
     conn.close()
     return dict(row) if row else None
 
 
-def search_contacts(query):
+def search_contacts(user_id, query):
     conn = get_connection()
     rows = conn.execute("""
         SELECT * FROM contacts
-        WHERE name LIKE ? OR company LIKE ? OR email LIKE ? OR notes LIKE ?
+        WHERE user_id = ? AND (name LIKE ? OR company LIKE ? OR email LIKE ? OR notes LIKE ?)
         ORDER BY name
-    """, (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%")).fetchall()
+    """, (user_id, f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%")).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def list_contacts(circle=None):
+def list_contacts(user_id, circle=None):
     conn = get_connection()
     if circle:
         rows = conn.execute(
-            "SELECT * FROM contacts WHERE circle = ? ORDER BY name",
-            (circle,)
+            "SELECT * FROM contacts WHERE user_id = ? AND circle = ? ORDER BY name",
+            (user_id, circle)
         ).fetchall()
     else:
-        rows = conn.execute("SELECT * FROM contacts ORDER BY circle, name").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM contacts WHERE user_id = ? ORDER BY circle, name",
+            (user_id,)
+        ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def update_contact(contact_id, **fields):
+def update_contact(contact_id, user_id, **fields):
     if not fields:
         return
     allowed = {"name", "email", "phone", "company", "role", "circle",
@@ -142,16 +195,16 @@ def update_contact(contact_id, **fields):
         return
     fields["updated_at"] = datetime.now().isoformat()
     set_clause = ", ".join(f"{k} = ?" for k in fields)
-    values = list(fields.values()) + [contact_id]
+    values = list(fields.values()) + [contact_id, user_id]
     conn = get_connection()
-    conn.execute(f"UPDATE contacts SET {set_clause} WHERE id = ?", values)
+    conn.execute(f"UPDATE contacts SET {set_clause} WHERE id = ? AND user_id = ?", values)
     conn.commit()
     conn.close()
 
 
-def delete_contact(contact_id):
+def delete_contact(contact_id, user_id):
     conn = get_connection()
-    conn.execute("DELETE FROM contacts WHERE id = ?", (contact_id,))
+    conn.execute("DELETE FROM contacts WHERE id = ? AND user_id = ?", (contact_id, user_id))
     conn.commit()
     conn.close()
 
@@ -185,25 +238,25 @@ def get_interactions(contact_id, limit=10):
     return [dict(r) for r in rows]
 
 
-def get_pending_followups():
+def get_pending_followups(user_id):
     conn = get_connection()
     rows = conn.execute("""
         SELECT i.*, c.name as contact_name, c.circle
         FROM interactions i
         JOIN contacts c ON i.contact_id = c.id
-        WHERE i.follow_up_needed = 1 AND i.follow_up_done = 0
+        WHERE c.user_id = ? AND i.follow_up_needed = 1 AND i.follow_up_done = 0
         ORDER BY i.follow_up_by ASC, i.date ASC
-    """).fetchall()
+    """, (user_id,)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def mark_followup_done(interaction_id):
+def mark_followup_done(interaction_id, user_id):
     conn = get_connection()
-    conn.execute(
-        "UPDATE interactions SET follow_up_done = 1 WHERE id = ?",
-        (interaction_id,)
-    )
+    conn.execute("""
+        UPDATE interactions SET follow_up_done = 1
+        WHERE id = ? AND contact_id IN (SELECT id FROM contacts WHERE user_id = ?)
+    """, (interaction_id, user_id))
     conn.commit()
     conn.close()
 
@@ -249,33 +302,31 @@ def add_goal(contact_id, goal, target_date=None):
     return goal_id
 
 
-def complete_goal(goal_id):
+def complete_goal(goal_id, user_id):
     conn = get_connection()
     conn.execute("""
         UPDATE relationship_goals
         SET completed = 1, completed_at = datetime('now')
-        WHERE id = ?
-    """, (goal_id,))
+        WHERE id = ? AND contact_id IN (SELECT id FROM contacts WHERE user_id = ?)
+    """, (goal_id, user_id))
     conn.commit()
     conn.close()
 
 
-def get_goals(contact_id=None, pending_only=False):
+def get_goals(user_id, contact_id=None, pending_only=False):
     conn = get_connection()
     query = """
         SELECT g.*, c.name as contact_name
         FROM relationship_goals g
         JOIN contacts c ON g.contact_id = c.id
+        WHERE c.user_id = ?
     """
-    conditions = []
-    params = []
+    params = [user_id]
     if contact_id:
-        conditions.append("g.contact_id = ?")
+        query += " AND g.contact_id = ?"
         params.append(contact_id)
     if pending_only:
-        conditions.append("g.completed = 0")
-    if conditions:
-        query += " WHERE " + " AND ".join(conditions)
+        query += " AND g.completed = 0"
     query += " ORDER BY g.target_date ASC"
     rows = conn.execute(query, params).fetchall()
     conn.close()
@@ -284,70 +335,73 @@ def get_goals(contact_id=None, pending_only=False):
 
 # --- Dashboard Stats ---
 
-def get_stats():
+def get_stats(user_id):
     conn = get_connection()
     stats = {}
 
-    # Contact counts by circle
     rows = conn.execute("""
-        SELECT circle, COUNT(*) as count FROM contacts GROUP BY circle
-    """).fetchall()
+        SELECT circle, COUNT(*) as count FROM contacts WHERE user_id = ? GROUP BY circle
+    """, (user_id,)).fetchall()
     stats["circles"] = {r["circle"]: r["count"] for r in rows}
     stats["total_contacts"] = sum(stats["circles"].values())
 
-    # Interactions this week
     week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     row = conn.execute("""
-        SELECT COUNT(*) as count FROM interactions WHERE date >= ?
-    """, (week_ago,)).fetchone()
+        SELECT COUNT(*) as count FROM interactions i
+        JOIN contacts c ON i.contact_id = c.id
+        WHERE c.user_id = ? AND i.date >= ?
+    """, (user_id, week_ago)).fetchone()
     stats["interactions_this_week"] = row["count"]
 
-    # Interactions this month
     month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
     row = conn.execute("""
-        SELECT COUNT(*) as count FROM interactions WHERE date >= ?
-    """, (month_ago,)).fetchone()
+        SELECT COUNT(*) as count FROM interactions i
+        JOIN contacts c ON i.contact_id = c.id
+        WHERE c.user_id = ? AND i.date >= ?
+    """, (user_id, month_ago)).fetchone()
     stats["interactions_this_month"] = row["count"]
 
-    # Pending follow-ups
     row = conn.execute("""
-        SELECT COUNT(*) as count FROM interactions
-        WHERE follow_up_needed = 1 AND follow_up_done = 0
-    """).fetchone()
+        SELECT COUNT(*) as count FROM interactions i
+        JOIN contacts c ON i.contact_id = c.id
+        WHERE c.user_id = ? AND i.follow_up_needed = 1 AND i.follow_up_done = 0
+    """, (user_id,)).fetchone()
     stats["pending_followups"] = row["count"]
 
-    # Overdue follow-ups
     today = datetime.now().strftime("%Y-%m-%d")
     row = conn.execute("""
-        SELECT COUNT(*) as count FROM interactions
-        WHERE follow_up_needed = 1 AND follow_up_done = 0
-        AND follow_up_by IS NOT NULL AND follow_up_by < ?
-    """, (today,)).fetchone()
+        SELECT COUNT(*) as count FROM interactions i
+        JOIN contacts c ON i.contact_id = c.id
+        WHERE c.user_id = ? AND i.follow_up_needed = 1 AND i.follow_up_done = 0
+        AND i.follow_up_by IS NOT NULL AND i.follow_up_by < ?
+    """, (user_id, today)).fetchone()
     stats["overdue_followups"] = row["count"]
 
-    # Generosity acts this month
     row = conn.execute("""
-        SELECT COUNT(*) as count FROM generosity WHERE date >= ?
-    """, (month_ago,)).fetchone()
+        SELECT COUNT(*) as count FROM generosity g
+        JOIN contacts c ON g.contact_id = c.id
+        WHERE c.user_id = ? AND g.date >= ?
+    """, (user_id, month_ago)).fetchone()
     stats["generosity_this_month"] = row["count"]
 
-    # Pending goals
     row = conn.execute("""
-        SELECT COUNT(*) as count FROM relationship_goals WHERE completed = 0
-    """).fetchone()
+        SELECT COUNT(*) as count FROM relationship_goals g
+        JOIN contacts c ON g.contact_id = c.id
+        WHERE c.user_id = ? AND g.completed = 0
+    """, (user_id,)).fetchone()
     stats["pending_goals"] = row["count"]
 
-    # Dormant contacts (no interaction in 90+ days)
     ninety_ago = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
     rows = conn.execute("""
         SELECT c.id, c.name, c.circle, MAX(i.date) as last_interaction
         FROM contacts c
         LEFT JOIN interactions i ON c.id = i.contact_id
+        WHERE c.user_id = ?
         GROUP BY c.id
         HAVING last_interaction IS NULL OR last_interaction < ?
         ORDER BY last_interaction ASC
         LIMIT 10
-    """, (ninety_ago,)).fetchall()
+    """, (user_id, ninety_ago)).fetchall()
     stats["dormant_contacts"] = [dict(r) for r in rows]
 
     conn.close()

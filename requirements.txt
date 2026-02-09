@@ -1,5 +1,6 @@
 click>=8.0
 rich>=13.0
 flask>=3.0
+flask-wtf>=1.2
 gunicorn>=21.0
 psycopg2-binary>=2.9

@@ -4,12 +4,26 @@ Based on "Never Eat Alone" by Keith Ferrazzi.
 """
 
 import os
-import json
+import secrets
 import functools
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g, jsonify
+from flask_wtf.csrf import CSRFProtect
 
 from . import database as db
+
+csrf = CSRFProtect()
+
+
+def safe_redirect(next_url, default="dashboard"):
+    """Only allow redirects to local paths (prevent open redirect)."""
+    if not next_url:
+        return redirect(url_for(default))
+    parsed = urlparse(next_url)
+    if parsed.netloc or parsed.scheme:
+        return redirect(url_for(default))
+    return redirect(next_url)
 
 CIRCLE_LABELS = {
     "inner_circle": "Vnitřní kruh",
@@ -56,7 +70,16 @@ def login_required(f):
 
 def create_app():
     app = Flask(__name__)
-    app.secret_key = os.environ.get("SECRET_KEY", "dev-networking-tool-key")
+
+    # SECRET_KEY: require from environment in production
+    secret = os.environ.get("SECRET_KEY")
+    if not secret:
+        secret = secrets.token_hex(32)
+        import sys
+        print("WARNING: SECRET_KEY not set! Generated random key. Set SECRET_KEY env var for persistent sessions.", file=sys.stderr)
+    app.secret_key = secret
+
+    csrf.init_app(app)
 
     database_url = os.environ.get("DATABASE_URL", "")
     if database_url:
@@ -402,8 +425,7 @@ def create_app():
             conversation_starter=conversation_starter,
         )
         flash("Interakce zaznamenána!", "success")
-        next_url = request.form.get("next", url_for("contact_detail", contact_id=contact_id))
-        return redirect(next_url)
+        return safe_redirect(request.form.get("next"), "contacts")
 
     @app.route("/api/quick-log", methods=["POST"])
     @login_required
@@ -412,11 +434,11 @@ def create_app():
         contact_id = request.form.get("contact_id")
         if not contact_id:
             flash("Vyber kontakt.", "error")
-            return redirect(request.form.get("next", url_for("contacts")))
+            return safe_redirect(request.form.get("next"), "contacts")
         contact = db.get_contact(int(contact_id), uid)
         if not contact:
             flash("Kontakt nenalezen.", "error")
-            return redirect(request.form.get("next", url_for("contacts")))
+            return safe_redirect(request.form.get("next"), "contacts")
 
         follow_up = "follow_up" in request.form
         follow_up_by = None
@@ -431,8 +453,7 @@ def create_app():
             follow_up_by=follow_up_by,
         )
         flash(f"Interakce s {contact['name']} zaznamenána!", "success")
-        next_url = request.form.get("next", url_for("contacts"))
-        return redirect(next_url)
+        return safe_redirect(request.form.get("next"), "contacts")
 
     @app.route("/api/contacts/search")
     @login_required
@@ -457,8 +478,7 @@ def create_app():
     def followup_done(interaction_id):
         db.mark_followup_done(interaction_id, g.user["id"])
         flash("Follow-up vyřízen!", "success")
-        next_url = request.form.get("next", url_for("followups"))
-        return redirect(next_url)
+        return safe_redirect(request.form.get("next"), "followups")
 
     # ========== Generosity ==========
 
@@ -500,7 +520,7 @@ def create_app():
     def goal_done(goal_id):
         db.complete_goal(goal_id, g.user["id"])
         flash("Cíl splněn!", "success")
-        return redirect(request.form.get("next", url_for("dashboard")))
+        return safe_redirect(request.form.get("next"), "dashboard")
 
     @app.route("/goals")
     @login_required
@@ -528,8 +548,7 @@ def create_app():
     @login_required
     def starter_deactivate(starter_id):
         db.deactivate_conversation_starter(starter_id, g.user["id"])
-        next_url = request.form.get("next", url_for("dashboard"))
-        return redirect(next_url)
+        return safe_redirect(request.form.get("next"), "dashboard")
 
     # ========== Introductions ==========
 
@@ -575,7 +594,7 @@ def create_app():
             outcome=request.form.get("outcome"),
         )
         flash("Propojení aktualizováno!", "success")
-        return redirect(request.form.get("next", url_for("introductions")))
+        return safe_redirect(request.form.get("next"), "introductions")
 
     # ========== Agenda ==========
 
@@ -596,7 +615,7 @@ def create_app():
         if item_type and item_id:
             db.skip_agenda_item(uid, item_type, int(item_id))
             flash("Položka přeskočena do příštího týdne.", "success")
-        return redirect(request.form.get("next", url_for("agenda")))
+        return safe_redirect(request.form.get("next"), "agenda")
 
     # ========== Notifications ==========
 
@@ -624,7 +643,7 @@ def create_app():
     def notifications_read_all():
         db.mark_all_notifications_read(g.user["id"])
         flash("Všechny notifikace označeny jako přečtené.", "success")
-        return redirect(request.form.get("next", url_for("dashboard")))
+        return safe_redirect(request.form.get("next"), "dashboard")
 
     @app.route("/api/notifications")
     @login_required

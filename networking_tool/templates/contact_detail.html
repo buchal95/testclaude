@@ -101,17 +101,17 @@
             <!-- Social links -->
             {% if contact.linkedin_url or contact.instagram or contact.twitter or contact.facebook_url %}
             <div class="social-links" style="margin-top: 1rem;">
-                {% if contact.linkedin_url %}
-                <a href="{{ contact.linkedin_url }}" target="_blank">LinkedIn</a>
+                {% if contact.linkedin_url and contact.linkedin_url.startswith('http') %}
+                <a href="{{ contact.linkedin_url }}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                 {% endif %}
                 {% if contact.instagram %}
-                <a href="https://instagram.com/{{ contact.instagram.replace('@', '') }}" target="_blank">{{ contact.instagram }}</a>
+                <a href="https://instagram.com/{{ contact.instagram.replace('@', '') }}" target="_blank" rel="noopener noreferrer">{{ contact.instagram }}</a>
                 {% endif %}
                 {% if contact.twitter %}
-                <a href="https://x.com/{{ contact.twitter.replace('@', '') }}" target="_blank">{{ contact.twitter }}</a>
+                <a href="https://x.com/{{ contact.twitter.replace('@', '') }}" target="_blank" rel="noopener noreferrer">{{ contact.twitter }}</a>
                 {% endif %}
-                {% if contact.facebook_url %}
-                <a href="{{ contact.facebook_url }}" target="_blank">Facebook</a>
+                {% if contact.facebook_url and contact.facebook_url.startswith('http') %}
+                <a href="{{ contact.facebook_url }}" target="_blank" rel="noopener noreferrer">Facebook</a>
                 {% endif %}
             </div>
             {% endif %}

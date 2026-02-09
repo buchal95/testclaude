@@ -6,6 +6,20 @@
     <a href="{{ url_for('contact_new') }}" class="btn btn-primary">+ Nový kontakt</a>
 </div>
 
+<!-- Weekly progress -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h2 style="margin-bottom: 0;">Týdenní cíl</h2>
+        <span style="font-size: 0.9rem; color: var(--text-dim);">{{ progress.done }}/{{ progress.goal }} interakcí</span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" style="width: {{ progress.percent }}%;{% if progress.percent >= 100 %} background: var(--success);{% endif %}"></div>
+    </div>
+    {% if progress.percent >= 100 %}
+    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--success);">Splněno! Skvělá práce tento týden.</p>
+    {% endif %}
+</div>
+
 <div class="grid grid-4">
     <div class="stat stat-blue">
         <div class="number">{{ stats.total_contacts }}</div>
@@ -53,6 +67,7 @@
         <table>
             <tr><td>Interakce tento měsíc</td><td style="text-align:right; font-weight:700">{{ stats.interactions_this_month }}</td></tr>
             <tr><td>Dobré skutky tento měsíc</td><td style="text-align:right; font-weight:700">{{ stats.generosity_this_month }}</td></tr>
+            <tr><td>Propojení tento měsíc</td><td style="text-align:right; font-weight:700">{{ stats.introductions_this_month }}</td></tr>
             <tr>
                 <td>Zpožděné follow-upy</td>
                 <td style="text-align:right; font-weight:700; color: {% if stats.overdue_followups > 0 %}var(--danger){% else %}var(--success){% endif %}">
@@ -64,9 +79,33 @@
     </div>
 </div>
 
+<!-- Agenda preview -->
+{% if agenda %}
+<div class="card" style="margin-top: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin-bottom: 0;">Týdenní agenda</h2>
+        <a href="{{ url_for('agenda') }}" class="btn btn-sm">Zobrazit vše</a>
+    </div>
+    {% for item in agenda %}
+    <div class="agenda-item {{ 'overdue' if item.overdue }}">
+        <div class="agenda-info">
+            <div class="agenda-title">
+                <a href="{{ url_for('contact_detail', contact_id=item.contact_id) }}">{{ item.title }}</a>
+            </div>
+            <div class="agenda-detail">{{ item.detail }}</div>
+        </div>
+        {% if item.due %}
+        <span class="badge {{ 'badge-danger' if item.overdue else 'badge-warning' }}">{{ item.due }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% if followups %}
 <div class="card" style="margin-top: 1.5rem;">
     <h2>Čekající follow-upy</h2>
+    <div class="table-wrap">
     <table>
         <thead><tr><th>Kontakt</th><th>Typ</th><th>Datum</th><th>Do kdy</th><th></th></tr></thead>
         <tbody>
@@ -92,6 +131,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
     {% if followups|length > 5 %}
     <p style="margin-top: 0.75rem;"><a href="{{ url_for('followups') }}">Zobrazit vše ({{ followups|length }})</a></p>
     {% endif %}
@@ -102,6 +142,7 @@
 <div class="card card-warning" style="margin-top: 1.5rem;">
     <h2 style="color: var(--warning);">Spící kontakty (90+ dní bez interakce)</h2>
     <p style="color: var(--text-dim); margin-bottom: 1rem;">Obnov kontakt — stačí krátký e-mail nebo káva!</p>
+    <div class="table-wrap">
     <table>
         <thead><tr><th>Jméno</th><th>Kruh</th><th>Poslední interakce</th></tr></thead>
         <tbody>
@@ -114,6 +155,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 {% endblock %}

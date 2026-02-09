@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Propojení{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Propojení</h1>
+</div>
+
+<div class="filter-bar">
+    <a href="{{ url_for('introductions') }}" class="btn btn-sm {{ 'btn-primary' if not current_status }}">Vše</a>
+    {% for key, label in intro_statuses.items() %}
+    <a href="{{ url_for('introductions', status=key) }}" class="btn btn-sm {{ 'btn-primary' if current_status == key }}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if introductions %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Kontakt A</th>
+                <th></th>
+                <th>Kontakt B</th>
+                <th class="hide-mobile">Kontext</th>
+                <th>Stav</th>
+                <th class="hide-mobile">Výsledek</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for i in introductions %}
+        <tr>
+            <td>{{ i.date }}</td>
+            <td><a href="{{ url_for('contact_detail', contact_id=i.contact_a_id) }}" style="font-weight: 600;">{{ i.contact_a_name }}</a></td>
+            <td style="color: var(--text-muted); text-align: center;">&harr;</td>
+            <td><a href="{{ url_for('contact_detail', contact_id=i.contact_b_id) }}" style="font-weight: 600;">{{ i.contact_b_name }}</a></td>
+            <td class="hide-mobile">{{ i.context or '—' }}</td>
+            <td><span class="badge badge-{{ 'success' if i.status == 'successful' else ('warning' if i.status in ('planned','made') else 'dormant') }}">{{ i.status|intro_status_label }}</span></td>
+            <td class="hide-mobile">{{ i.outcome or '—' }}</td>
+            <td>
+                {% if i.status != 'successful' and i.status != 'no_result' %}
+                <form method="post" action="{{ url_for('introduction_update', intro_id=i.id) }}" style="display: inline;">
+                    <input type="hidden" name="next" value="{{ url_for('introductions') }}">
+                    <select name="status" onchange="this.form.submit()" style="width: auto; padding: 0.25rem; font-size: 0.78rem;">
+                        {% for key, label in intro_statuses.items() %}
+                        <option value="{{ key }}" {{ 'selected' if i.status == key }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% else %}
+<div class="empty">
+    <p>Žádná propojení{% if current_status %} se stavem „{{ current_status|intro_status_label }}"{% endif %}.</p>
+    <p style="margin-top: 0.5rem;">Propojuj lidi ze svého okolí! Přidej propojení na stránce kontaktu.</p>
+</div>
+{% endif %}
+{% endblock %}

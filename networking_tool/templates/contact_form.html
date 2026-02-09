@@ -7,6 +7,7 @@
 
 <div class="card">
     <form method="post" action="{{ url_for('contact_edit', contact_id=contact.id) if contact else url_for('contact_new') }}">
+        <h3 style="margin-bottom: 1rem; color: var(--text);">Základní informace</h3>
         <div class="grid grid-2">
             <div class="form-group">
                 <label>Jméno *</label>
@@ -37,17 +38,72 @@
                 <input type="text" name="role" value="{{ contact.role if contact and contact.role else '' }}" placeholder="Pracovní pozice">
             </div>
             <div class="form-group">
+                <label>Narozeniny</label>
+                <input type="date" name="birthday" value="{{ contact.birthday if contact and contact.birthday else '' }}">
+            </div>
+            <div class="form-group">
                 <label>Jak jste se potkali</label>
                 <input type="text" name="how_we_met" value="{{ contact.how_we_met if contact and contact.how_we_met else '' }}" placeholder="Konference, doporučení, ...">
             </div>
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text);">Sociální sítě</h3>
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label>LinkedIn URL</label>
+                <input type="url" name="linkedin_url" value="{{ contact.linkedin_url if contact and contact.linkedin_url else '' }}" placeholder="https://linkedin.com/in/...">
+            </div>
+            <div class="form-group">
+                <label>Instagram</label>
+                <input type="text" name="instagram" value="{{ contact.instagram if contact and contact.instagram else '' }}" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label>Twitter / X</label>
+                <input type="text" name="twitter" value="{{ contact.twitter if contact and contact.twitter else '' }}" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label>Facebook URL</label>
+                <input type="url" name="facebook_url" value="{{ contact.facebook_url if contact and contact.facebook_url else '' }}" placeholder="https://facebook.com/...">
+            </div>
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text);">Detaily</h3>
+        <div class="grid grid-2">
             <div class="form-group">
                 <label>Zájmy</label>
                 <input type="text" name="interests" value="{{ contact.interests if contact and contact.interests else '' }}" placeholder="Sport, technologie, ...">
+            </div>
+            <div class="form-group">
+                <label>Tagy (oddělené čárkou)</label>
+                <input type="text" name="tags" value="{{ contact.tags_str if contact and contact.tags_str else '' }}" placeholder="kolega, investor, mentor">
+            </div>
+            <div class="form-group">
+                <label>Představil/a</label>
+                <select name="introduced_by_contact_id">
+                    <option value="">— nikdo —</option>
+                    {% for c in all_contacts %}
+                    {% if not contact or c.id != contact.id %}
+                    <option value="{{ c.id }}" {{ 'selected' if contact and contact.introduced_by_contact_id == c.id }}>{{ c.name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Představil/a (text)</label>
+                <input type="text" name="introduced_by_text" value="{{ contact.introduced_by_text if contact and contact.introduced_by_text else '' }}" placeholder="Kdo vás propojil (pokud nemáte kontakt)">
+            </div>
+            <div class="form-group">
+                <label>Vlastní frekvence kontaktu (dní)</label>
+                <input type="number" name="contact_frequency_days" value="{{ contact.contact_frequency_days if contact and contact.contact_frequency_days else '' }}" placeholder="Přepíše výchozí frekvenci kruhu" min="1">
             </div>
         </div>
         <div class="form-group">
             <label>Cíle (co pro něj/ni chceš udělat)</label>
             <input type="text" name="goals" value="{{ contact.goals if contact and contact.goals else '' }}" placeholder="Představit kolegu, doporučit knihu, ...">
+        </div>
+        <div class="form-group">
+            <label>Osobní detaily</label>
+            <textarea name="personal_details" placeholder="Jména dětí, koníčky partnera, oblíbené jídlo...">{{ contact.personal_details if contact and contact.personal_details else '' }}</textarea>
         </div>
         <div class="form-group">
             <label>Poznámky</label>

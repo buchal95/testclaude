@@ -13,35 +13,164 @@
 </form>
 
 <div class="filter-bar">
-    <a href="{{ url_for('contacts') }}" class="btn btn-sm {{ 'btn-primary' if not current_circle }}">Vše</a>
+    <a href="{{ url_for('contacts') }}" class="btn btn-sm {{ 'btn-primary' if not current_circle and not current_tag }}">Vše</a>
     {% for key, label in circle_labels.items() %}
     <a href="{{ url_for('contacts', circle=key) }}" class="btn btn-sm {{ 'btn-primary' if current_circle == key }}">{{ label }}</a>
     {% endfor %}
+    <span style="width: 1px; background: var(--border); margin: 0 0.25rem;"></span>
+    {% for t in all_tags %}
+    <a href="{{ url_for('contacts', tag=t.name) }}" class="btn btn-sm {{ 'btn-primary' if current_tag == t.name }}">{{ t.name }} ({{ t.contact_count }})</a>
+    {% endfor %}
+</div>
+
+<!-- Sort -->
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
+    <span style="font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em;">Řadit:</span>
+    <a href="{{ url_for('contacts', sort='name', circle=current_circle, tag=current_tag) }}" class="btn btn-sm {{ 'btn-primary' if current_sort == 'name' }}">Jméno</a>
+    <a href="{{ url_for('contacts', sort='last_interaction', circle=current_circle, tag=current_tag) }}" class="btn btn-sm {{ 'btn-primary' if current_sort == 'last_interaction' }}">Poslední interakce</a>
+    <a href="{{ url_for('contacts', sort='health_score', circle=current_circle, tag=current_tag) }}" class="btn btn-sm {{ 'btn-primary' if current_sort == 'health_score' }}">Health Score</a>
+    <a href="{{ url_for('contacts', sort='created', circle=current_circle, tag=current_tag) }}" class="btn btn-sm {{ 'btn-primary' if current_sort == 'created' }}">Nejnovější</a>
+</div>
+
+<!-- Bulk action bar -->
+<div class="bulk-bar" id="bulkBar">
+    <span class="bulk-count" id="bulkCount">0 vybráno</span>
+    <form method="post" action="{{ url_for('contacts_bulk') }}" id="bulkForm" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+        <div id="bulkIds"></div>
+        <select name="bulk_circle" style="width: auto; padding: 0.35rem 0.5rem; font-size: 0.8rem;">
+            {% for key, label in circle_labels.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" name="action" value="move_circle" class="btn btn-sm">Přesunout do kruhu</button>
+        <input type="text" name="bulk_tag" placeholder="Tag..." style="width: 100px; padding: 0.35rem 0.5rem; font-size: 0.8rem;">
+        <button type="submit" name="action" value="add_tag" class="btn btn-sm">Přidat tag</button>
+        <button type="submit" name="action" value="delete" class="btn btn-sm btn-danger" onclick="return confirm('Opravdu smazat vybrané kontakty?')">Smazat</button>
+    </form>
 </div>
 
 {% if contacts %}
 <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>Jméno</th><th>Firma</th><th>Pozice</th><th>Kruh</th><th>E-mail</th></tr>
+            <tr>
+                <th style="width: 32px;"><input type="checkbox" id="selectAll" style="width: auto; accent-color: var(--accent);"></th>
+                <th>Jméno</th>
+                <th class="hide-mobile">Firma</th>
+                <th>Kruh</th>
+                <th>Health</th>
+                <th class="hide-mobile">Tagy</th>
+                <th class="hide-mobile">Poslední interakce</th>
+            </tr>
         </thead>
         <tbody>
         {% for c in contacts %}
         <tr>
-            <td><a href="{{ url_for('contact_detail', contact_id=c.id) }}" style="font-weight: 600;">{{ c.name }}</a></td>
-            <td>{{ c.company or '—' }}</td>
-            <td>{{ c.role or '—' }}</td>
+            <td><input type="checkbox" class="row-check" value="{{ c.id }}" style="width: auto; accent-color: var(--accent);"></td>
+            <td><a href="{{ url_for('contact_detail', contact_id=c.id) }}" style="font-weight: 600;">{{ c.name }}</a>
+                {% if c.company %}<br><span style="font-size: 0.78rem; color: var(--text-dim);">{{ c.company }}</span>{% endif %}
+            </td>
+            <td class="hide-mobile">{{ c.company or '—' }}</td>
             <td><span class="badge badge-{{ c.circle }}">{{ c.circle|circle_label }}</span></td>
-            <td style="color: var(--text-dim);">{{ c.email or '—' }}</td>
+            <td>
+                <div class="health-ring" style="border: 2px solid {{ c.health_score|health_color }}; color: {{ c.health_score|health_color }};">
+                    {{ c.health_score }}
+                </div>
+            </td>
+            <td class="hide-mobile">
+                {% for t in c.tags %}
+                <span class="tag">{{ t.name }}</span>
+                {% endfor %}
+            </td>
+            <td class="hide-mobile" style="color: var(--text-dim); font-size: 0.85rem;">{{ c.last_interaction or '—' }}</td>
         </tr>
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% else %}
 <div class="empty">
-    <p>Žádné kontakty{% if query %} pro „{{ query }}"{% endif %}{% if current_circle %} v kruhu „{{ current_circle|circle_label }}"{% endif %}.</p>
+    <p>Žádné kontakty{% if query %} pro „{{ query }}"{% endif %}{% if current_circle %} v kruhu „{{ current_circle|circle_label }}"{% endif %}{% if current_tag %} s tagem „{{ current_tag }}"{% endif %}.</p>
     <p style="margin-top: 0.5rem;"><a href="{{ url_for('contact_new') }}">Přidej první kontakt</a></p>
 </div>
 {% endif %}
+
+<!-- Quick log FAB + modal -->
+<button class="fab" onclick="document.getElementById('quickLogModal').classList.add('active')">+</button>
+
+<div class="modal-overlay" id="quickLogModal">
+    <div class="modal">
+        <button class="modal-close" onclick="document.getElementById('quickLogModal').classList.remove('active')">&times;</button>
+        <h2>Rychlý záznam interakce</h2>
+        <form method="post" action="{{ url_for('quick_log') }}">
+            <input type="hidden" name="next" value="{{ url_for('contacts') }}">
+            <div class="form-group">
+                <label>Kontakt *</label>
+                <select name="contact_id" required>
+                    <option value="">— vyber kontakt —</option>
+                    {% for c in contacts %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Typ</label>
+                <select name="type">
+                    {% for key, label in interaction_types.items() %}
+                    <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Popis</label>
+                <input type="text" name="description" placeholder="O čem jste mluvili...">
+            </div>
+            <div class="checkbox-group" style="margin-bottom: 1rem;">
+                <input type="checkbox" name="follow_up" id="ql_fu">
+                <label for="ql_fu" style="margin: 0; text-transform: none; letter-spacing: normal;">Potřebuje follow-up</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Zaznamenat</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+    var selectAll = document.getElementById('selectAll');
+    var checks = document.querySelectorAll('.row-check');
+    var bulkBar = document.getElementById('bulkBar');
+    var bulkCount = document.getElementById('bulkCount');
+    var bulkIds = document.getElementById('bulkIds');
+
+    function updateBulk() {
+        var selected = document.querySelectorAll('.row-check:checked');
+        bulkIds.innerHTML = '';
+        selected.forEach(function(cb){
+            var h = document.createElement('input');
+            h.type = 'hidden'; h.name = 'contact_ids'; h.value = cb.value;
+            bulkIds.appendChild(h);
+        });
+        if (selected.length > 0) {
+            bulkBar.classList.add('active');
+            bulkCount.textContent = selected.length + ' vybráno';
+        } else {
+            bulkBar.classList.remove('active');
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function(){
+            checks.forEach(function(cb){ cb.checked = selectAll.checked; });
+            updateBulk();
+        });
+    }
+    checks.forEach(function(cb){
+        cb.addEventListener('change', updateBulk);
+    });
+})();
+</script>
 {% endblock %}

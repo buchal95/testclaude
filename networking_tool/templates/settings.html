@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Nastavení{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Nastavení</h1>
+</div>
+
+<div class="card">
+    <h2>Frekvence kontaktu</h2>
+    <p style="color: var(--text-dim); margin-bottom: 1.25rem; font-size: 0.9rem;">Nastav, jak často chceš být v kontaktu s lidmi v jednotlivých kruzích (ve dnech). Health Score bude počítat varování na základě těchto hodnot.</p>
+    <form method="post" action="{{ url_for('settings') }}">
+        <div class="grid grid-3">
+            <div class="form-group">
+                <label>Vnitřní kruh (dní)</label>
+                <input type="number" name="freq_inner_circle" value="{{ settings.freq_inner_circle }}" min="1" max="365">
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Výchozí: 14 dní</span>
+            </div>
+            <div class="form-group">
+                <label>Blízcí (dní)</label>
+                <input type="number" name="freq_close" value="{{ settings.freq_close }}" min="1" max="365">
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Výchozí: 30 dní</span>
+            </div>
+            <div class="form-group">
+                <label>Známí (dní)</label>
+                <input type="number" name="freq_acquaintance" value="{{ settings.freq_acquaintance }}" min="1" max="365">
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Výchozí: 90 dní</span>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 1.5rem;">Týdenní cíl</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.25rem; font-size: 0.9rem;">Kolik interakcí chceš týdně zaznamenat? Sleduj svůj pokrok na dashboardu a v agendě.</p>
+        <div class="form-group" style="max-width: 200px;">
+            <label>Počet interakcí za týden</label>
+            <input type="number" name="weekly_goal" value="{{ settings.weekly_goal }}" min="1" max="50">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Výchozí: 5</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Uložit nastavení</button>
+    </form>
+</div>
+{% endblock %}

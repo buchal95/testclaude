@@ -12,17 +12,18 @@
 
 {% if followups %}
 <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>Kontakt</th><th>Kruh</th><th>Typ</th><th>Datum interakce</th><th>Follow-up do</th><th>Stav</th><th></th></tr>
+            <tr><th>Kontakt</th><th class="hide-mobile">Kruh</th><th>Typ</th><th class="hide-mobile">Datum interakce</th><th>Follow-up do</th><th class="hide-mobile">Stav</th><th></th></tr>
         </thead>
         <tbody>
         {% for f in followups %}
         <tr>
             <td><a href="{{ url_for('contact_detail', contact_id=f.contact_id) }}" style="font-weight: 600;">{{ f.contact_name }}</a></td>
-            <td><span class="badge badge-{{ f.circle }}">{{ f.circle|circle_label }}</span></td>
+            <td class="hide-mobile"><span class="badge badge-{{ f.circle }}">{{ f.circle|circle_label }}</span></td>
             <td>{{ f.type|interaction_label }}</td>
-            <td>{{ f.date }}</td>
+            <td class="hide-mobile">{{ f.date }}</td>
             <td>
                 {% if f.follow_up_by and f.follow_up_by < today %}
                     <span class="badge badge-danger">{{ f.follow_up_by }}</span>
@@ -30,7 +31,7 @@
                     {{ f.follow_up_by or '—' }}
                 {% endif %}
             </td>
-            <td>
+            <td class="hide-mobile">
                 {% if f.follow_up_by and f.follow_up_by < today %}
                     <span class="badge badge-danger">Zpožděn</span>
                 {% else %}
@@ -46,6 +47,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% else %}
 <div class="empty">

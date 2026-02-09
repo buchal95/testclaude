@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Týdenní agenda{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Týdenní agenda</h1>
+</div>
+
+<!-- Weekly progress -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h2 style="margin-bottom: 0;">Týdenní cíl</h2>
+        <span style="font-size: 1.1rem; font-weight: 700;">
+            <span style="color: {{ progress.done|health_color if progress.percent < 100 else 'var(--success)' }};">{{ progress.done }}</span>
+            <span style="color: var(--text-muted);">/{{ progress.goal }}</span>
+        </span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" style="width: {{ progress.percent }}%;{% if progress.percent >= 100 %} background: var(--success);{% endif %}"></div>
+    </div>
+    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">
+        {% if progress.percent >= 100 %}
+        Splněno! Týdenní cíl je na {{ progress.percent }}%.
+        {% elif progress.percent >= 60 %}
+        Jsi na dobré cestě — {{ progress.percent }}% cíle.
+        {% else %}
+        Zatím {{ progress.percent }}% cíle. Pokračuj!
+        {% endif %}
+    </p>
+</div>
+
+{% if agenda %}
+<div style="margin-top: 1rem;">
+    {% for item in agenda %}
+    <div class="agenda-item {{ 'overdue' if item.overdue }}">
+        <div class="agenda-info">
+            <div class="agenda-title">
+                <a href="{{ url_for('contact_detail', contact_id=item.contact_id) }}">{{ item.title }}</a>
+            </div>
+            <div class="agenda-detail">{{ item.detail }}</div>
+        </div>
+        <div class="agenda-actions">
+            {% if item.due %}
+            <span class="badge {{ 'badge-danger' if item.overdue else 'badge-warning' }}">{{ item.due }}</span>
+            {% endif %}
+            {% if item.type == 'followup' %}
+            <form method="post" action="{{ url_for('followup_done', interaction_id=item.id) }}" style="display:inline">
+                <input type="hidden" name="next" value="{{ url_for('agenda') }}">
+                <button type="submit" class="btn btn-sm btn-primary">Hotovo</button>
+            </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('agenda_skip') }}" style="display:inline">
+                <input type="hidden" name="item_type" value="{{ item.type }}">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <input type="hidden" name="next" value="{{ url_for('agenda') }}">
+                <button type="submit" class="btn btn-sm" title="Přeskočit do příštího týdne">Přeskočit</button>
+            </form>
+            <a href="{{ url_for('contact_detail', contact_id=item.contact_id) }}" class="btn btn-sm">Zaznamenat</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty" style="margin-top: 2rem;">
+    <p>Žádné položky v agendě!</p>
+    <p style="margin-top: 0.5rem;">Všechny vztahy jsou v pořádku. Skvělá práce!</p>
+</div>
+{% endif %}
+{% endblock %}

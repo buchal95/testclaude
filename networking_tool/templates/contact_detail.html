@@ -12,20 +12,110 @@
 </div>
 
 <div class="grid grid-2">
-    <div class="card">
-        <h2>Informace</h2>
-        <dl class="detail-grid">
-            <dt>Kruh</dt><dd><span class="badge badge-{{ contact.circle }}">{{ contact.circle|circle_label }}</span></dd>
-            <dt>Firma</dt><dd>{{ contact.company or '—' }}</dd>
-            <dt>Pozice</dt><dd>{{ contact.role or '—' }}</dd>
-            <dt>E-mail</dt><dd>{{ contact.email or '—' }}</dd>
-            <dt>Telefon</dt><dd>{{ contact.phone or '—' }}</dd>
-            <dt>Zájmy</dt><dd>{{ contact.interests or '—' }}</dd>
-            <dt>Jak jsme se potkali</dt><dd>{{ contact.how_we_met or '—' }}</dd>
-            <dt>Cíle</dt><dd>{{ contact.goals or '—' }}</dd>
-            <dt>Poznámky</dt><dd>{{ contact.notes or '—' }}</dd>
-            <dt>Přidán</dt><dd>{{ contact.created_at }}</dd>
-        </dl>
+    <div>
+        <!-- Info card -->
+        <div class="card">
+            <div style="display: flex; align-items: flex-start; gap: 1.25rem; margin-bottom: 1rem;">
+                <div class="health-big" style="border-color: {{ health.total|health_color }}; color: {{ health.total|health_color }}; flex-shrink: 0;">
+                    {{ health.total }}
+                </div>
+                <div style="flex: 1;">
+                    <h2 style="margin-bottom: 0.25rem;">Informace</h2>
+                    <div style="font-size: 0.85rem; color: var(--text-dim);">
+                        Health Score: {{ health.total }}/100
+                        <span style="color: {{ health.total|health_color }};">{{ trend|trend_arrow }}</span>
+                    </div>
+                    {% if birthday_soon %}
+                    <div style="margin-top: 0.5rem; padding: 0.35rem 0.7rem; background: var(--warning-bg); border-radius: 8px; font-size: 0.85rem; color: var(--warning); display: inline-block;">
+                        Blíží se narozeniny! ({{ contact.birthday }})
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Health components -->
+            <div style="margin-bottom: 1rem;">
+                <div class="health-component">
+                    <span>Frekvence (40%)</span>
+                    <div style="flex: 1; margin: 0 1rem;">
+                        <div class="health-bar-track"><div class="health-bar-fill" style="width: {{ health.frequency }}%; background: {{ health.frequency|health_color }};"></div></div>
+                    </div>
+                    <span style="font-weight: 600; color: {{ health.frequency|health_color }};">{{ health.frequency }}</span>
+                </div>
+                <div class="health-component">
+                    <span>Štědrost (20%)</span>
+                    <div style="flex: 1; margin: 0 1rem;">
+                        <div class="health-bar-track"><div class="health-bar-fill" style="width: {{ health.generosity }}%; background: {{ health.generosity|health_color }};"></div></div>
+                    </div>
+                    <span style="font-weight: 600; color: {{ health.generosity|health_color }};">{{ health.generosity }}</span>
+                </div>
+                <div class="health-component">
+                    <span>Follow-upy (20%)</span>
+                    <div style="flex: 1; margin: 0 1rem;">
+                        <div class="health-bar-track"><div class="health-bar-fill" style="width: {{ health.followup }}%; background: {{ health.followup|health_color }};"></div></div>
+                    </div>
+                    <span style="font-weight: 600; color: {{ health.followup|health_color }};">{{ health.followup }}</span>
+                </div>
+                <div class="health-component">
+                    <span>Cíle (20%)</span>
+                    <div style="flex: 1; margin: 0 1rem;">
+                        <div class="health-bar-track"><div class="health-bar-fill" style="width: {{ health.goals }}%; background: {{ health.goals|health_color }};"></div></div>
+                    </div>
+                    <span style="font-weight: 600; color: {{ health.goals|health_color }};">{{ health.goals }}</span>
+                </div>
+            </div>
+
+            <dl class="detail-grid">
+                <dt>Kruh</dt><dd><span class="badge badge-{{ contact.circle }}">{{ contact.circle|circle_label }}</span></dd>
+                <dt>Firma</dt><dd>{{ contact.company or '—' }}</dd>
+                <dt>Pozice</dt><dd>{{ contact.role or '—' }}</dd>
+                <dt>E-mail</dt><dd>{{ contact.email or '—' }}</dd>
+                <dt>Telefon</dt><dd>{{ contact.phone or '—' }}</dd>
+                {% if contact.birthday %}
+                <dt>Narozeniny</dt><dd>{{ contact.birthday }}</dd>
+                {% endif %}
+                <dt>Zájmy</dt><dd>{{ contact.interests or '—' }}</dd>
+                <dt>Jak jsme se potkali</dt><dd>{{ contact.how_we_met or '—' }}</dd>
+                {% if introducer_name %}
+                <dt>Představil/a</dt><dd><a href="{{ url_for('contact_detail', contact_id=contact.introduced_by_contact_id) }}">{{ introducer_name }}</a></dd>
+                {% elif contact.introduced_by_text %}
+                <dt>Představil/a</dt><dd>{{ contact.introduced_by_text }}</dd>
+                {% endif %}
+                {% if contact.personal_details %}
+                <dt>Osobní detaily</dt><dd>{{ contact.personal_details }}</dd>
+                {% endif %}
+                <dt>Cíle</dt><dd>{{ contact.goals or '—' }}</dd>
+                <dt>Poznámky</dt><dd>{{ contact.notes or '—' }}</dd>
+                <dt>Přidán</dt><dd>{{ contact.created_at }}</dd>
+            </dl>
+
+            <!-- Tags -->
+            {% if tags %}
+            <div style="margin-top: 1rem;">
+                {% for t in tags %}
+                <span class="tag">{{ t.name }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Social links -->
+            {% if contact.linkedin_url or contact.instagram or contact.twitter or contact.facebook_url %}
+            <div class="social-links" style="margin-top: 1rem;">
+                {% if contact.linkedin_url %}
+                <a href="{{ contact.linkedin_url }}" target="_blank">LinkedIn</a>
+                {% endif %}
+                {% if contact.instagram %}
+                <a href="https://instagram.com/{{ contact.instagram.replace('@', '') }}" target="_blank">{{ contact.instagram }}</a>
+                {% endif %}
+                {% if contact.twitter %}
+                <a href="https://x.com/{{ contact.twitter.replace('@', '') }}" target="_blank">{{ contact.twitter }}</a>
+                {% endif %}
+                {% if contact.facebook_url %}
+                <a href="{{ contact.facebook_url }}" target="_blank">Facebook</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
     </div>
 
     <div>
@@ -51,6 +141,22 @@
                     <label>Popis</label>
                     <input type="text" name="description" placeholder="O čem jste mluvili...">
                 </div>
+                <div class="form-group">
+                    <label>Téma na příště (Conversation Starter)</label>
+                    <input type="text" name="conversation_starter" placeholder="Na co se příště zeptat...">
+                </div>
+                <!-- Group interaction -->
+                <div class="form-group">
+                    <label>Další účastníci (skupinová interakce)</label>
+                    <select name="additional_contacts" multiple style="min-height: 60px;">
+                        {% for c in all_contacts %}
+                        {% if c.id != contact.id %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Podržte Ctrl/Cmd pro výběr více kontaktů</span>
+                </div>
                 <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.75rem;">
                     <div class="checkbox-group">
                         <input type="checkbox" name="follow_up" id="fu_check">
@@ -61,6 +167,28 @@
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Zaznamenat</button>
+            </form>
+        </div>
+
+        <!-- Conversation Starters -->
+        <div class="card">
+            <h2>Témata na příště</h2>
+            {% if starters %}
+            {% for s in starters %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; {% if not loop.last %}border-bottom: 1px solid var(--border);{% endif %}">
+                <span style="font-size: 0.9rem;">{{ s.content }}</span>
+                <form method="post" action="{{ url_for('starter_deactivate', starter_id=s.id) }}" style="display: inline;">
+                    <input type="hidden" name="next" value="{{ url_for('contact_detail', contact_id=contact.id) }}">
+                    <button type="submit" class="btn btn-sm btn-ghost" title="Odebrat">&#10003;</button>
+                </form>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color: var(--text-dim); font-size: 0.88rem;">Žádná témata. Přidej téma při zaznamenávání interakce.</p>
+            {% endif %}
+            <form method="post" action="{{ url_for('starter_add', contact_id=contact.id) }}" style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                <input type="text" name="content" placeholder="Nové téma..." style="flex: 1;">
+                <button type="submit" class="btn btn-sm">Přidat</button>
             </form>
         </div>
 
@@ -91,6 +219,43 @@
             </form>
         </div>
 
+        <!-- Propojení (intro) -->
+        <div class="card">
+            <h2>Zaznamenat propojení</h2>
+            <form method="post" action="{{ url_for('introduction_add', contact_id=contact.id) }}">
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label>Propojit s *</label>
+                        <select name="contact_b_id" required>
+                            <option value="">— vyber kontakt —</option>
+                            {% for c in all_contacts %}
+                            {% if c.id != contact.id %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Datum</label>
+                        <input type="date" name="date" value="{{ today }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Kontext</label>
+                    <input type="text" name="context" placeholder="Proč je propojuješ...">
+                </div>
+                <div class="form-group">
+                    <label>Stav</label>
+                    <select name="status">
+                        {% for key, label in intro_statuses.items() %}
+                        <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Zaznamenat</button>
+            </form>
+        </div>
+
         <!-- Přidat cíl vztahu -->
         <div class="card">
             <h2>Přidat cíl vztahu</h2>
@@ -113,14 +278,22 @@
 {% if interactions %}
 <div class="card">
     <h2>Historie interakcí</h2>
+    <div class="table-wrap">
     <table>
-        <thead><tr><th>Datum</th><th>Typ</th><th>Popis</th><th>Follow-up</th><th></th></tr></thead>
+        <thead><tr><th>Datum</th><th>Typ</th><th>Popis</th><th class="hide-mobile">Účastníci</th><th>Follow-up</th><th></th></tr></thead>
         <tbody>
         {% for i in interactions %}
         <tr>
             <td>{{ i.date }}</td>
             <td>{{ i.type|interaction_label }}</td>
             <td>{{ i.description or '—' }}</td>
+            <td class="hide-mobile">
+                {% if i.other_participants and i.other_participants[0] %}
+                {% for p in i.other_participants if p %}
+                <span class="tag">{{ p }}</span>
+                {% endfor %}
+                {% endif %}
+            </td>
             <td>
                 {% if i.follow_up_needed %}
                     {% if i.follow_up_done %}
@@ -144,6 +317,47 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Propojení -->
+{% if intros %}
+<div class="card">
+    <h2>Propojení</h2>
+    <div class="table-wrap">
+    <table>
+        <thead><tr><th>Datum</th><th>Propojení</th><th>Kontext</th><th>Stav</th><th></th></tr></thead>
+        <tbody>
+        {% for i in intros %}
+        <tr>
+            <td>{{ i.date }}</td>
+            <td>
+                {% if i.contact_a_id == contact.id %}
+                <a href="{{ url_for('contact_detail', contact_id=i.contact_b_id) }}">{{ i.contact_b_name }}</a>
+                {% else %}
+                <a href="{{ url_for('contact_detail', contact_id=i.contact_a_id) }}">{{ i.contact_a_name }}</a>
+                {% endif %}
+            </td>
+            <td>{{ i.context or '—' }}</td>
+            <td><span class="badge badge-{{ 'success' if i.status == 'successful' else ('warning' if i.status in ('planned','made') else 'dormant') }}">{{ i.status|intro_status_label }}</span></td>
+            <td>
+                {% if i.status != 'successful' and i.status != 'no_result' %}
+                <form method="post" action="{{ url_for('introduction_update', intro_id=i.id) }}" style="display: inline;">
+                    <input type="hidden" name="next" value="{{ url_for('contact_detail', contact_id=contact.id) }}">
+                    <select name="status" onchange="this.form.submit()" style="width: auto; padding: 0.25rem; font-size: 0.78rem;">
+                        {% for key, label in intro_statuses.items() %}
+                        <option value="{{ key }}" {{ 'selected' if i.status == key }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
 </div>
 {% endif %}
 
@@ -151,6 +365,7 @@
 {% if generosity %}
 <div class="card">
     <h2>Dobré skutky</h2>
+    <div class="table-wrap">
     <table>
         <thead><tr><th>Datum</th><th>Kategorie</th><th>Popis</th></tr></thead>
         <tbody>
@@ -163,6 +378,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 
@@ -170,6 +386,7 @@
 {% if goals %}
 <div class="card">
     <h2>Cíle vztahu</h2>
+    <div class="table-wrap">
     <table>
         <thead><tr><th>Cíl</th><th>Do kdy</th><th>Stav</th><th></th></tr></thead>
         <tbody>
@@ -196,6 +413,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Kontakty{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Kontakty</h1>
+    <a href="{{ url_for('contact_new') }}" class="btn btn-primary">+ Novy kontakt</a>
+</div>
+
+<form class="search-bar" method="get" action="{{ url_for('contacts') }}">
+    <input type="text" name="q" placeholder="Hledej podle jmena, firmy, poznamek..." value="{{ query or '' }}">
+    <button type="submit" class="btn">Hledat</button>
+    {% if query %}<a href="{{ url_for('contacts') }}" class="btn">Zrusit</a>{% endif %}
+</form>
+
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <a href="{{ url_for('contacts') }}" class="btn btn-sm {{ 'btn-primary' if not current_circle }}">Vse</a>
+    {% for key, label in circle_labels.items() %}
+    <a href="{{ url_for('contacts', circle=key) }}" class="btn btn-sm {{ 'btn-primary' if current_circle == key }}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if contacts %}
+<div class="card" style="padding: 0;">
+    <table>
+        <thead>
+            <tr><th>Jmeno</th><th>Firma</th><th>Pozice</th><th>Kruh</th><th>E-mail</th></tr>
+        </thead>
+        <tbody>
+        {% for c in contacts %}
+        <tr>
+            <td><a href="{{ url_for('contact_detail', contact_id=c.id) }}" style="font-weight: 600;">{{ c.name }}</a></td>
+            <td>{{ c.company or '-' }}</td>
+            <td>{{ c.role or '-' }}</td>
+            <td><span class="badge badge-{{ c.circle }}">{{ c.circle|circle_label }}</span></td>
+            <td style="color: var(--text-dim);">{{ c.email or '-' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty">
+    <p>Zadne kontakty{% if query %} pro "{{ query }}"{% endif %}{% if current_circle %} v kruhu "{{ current_circle|circle_label }}"{% endif %}.</p>
+    <p style="margin-top: 0.5rem;"><a href="{{ url_for('contact_new') }}">Pridej prvni kontakt</a></p>
+</div>
+{% endif %}
+{% endblock %}

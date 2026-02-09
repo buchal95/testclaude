@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Upravit' if contact else 'Novy' }} kontakt{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ 'Upravit kontakt' if contact else 'Novy kontakt' }}</h1>
+</div>
+
+<div class="card">
+    <form method="post" action="{{ url_for('contact_edit', contact_id=contact.id) if contact else url_for('contact_new') }}">
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label>Jmeno *</label>
+                <input type="text" name="name" required value="{{ contact.name if contact else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Kruh vztahu</label>
+                <select name="circle">
+                    {% for key, label in circle_labels.items() %}
+                    <option value="{{ key }}" {{ 'selected' if contact and contact.circle == key }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" name="email" value="{{ contact.email if contact and contact.email else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Telefon</label>
+                <input type="tel" name="phone" value="{{ contact.phone if contact and contact.phone else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Firma</label>
+                <input type="text" name="company" value="{{ contact.company if contact and contact.company else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Pozice</label>
+                <input type="text" name="role" value="{{ contact.role if contact and contact.role else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Jak jste se potkali</label>
+                <input type="text" name="how_we_met" value="{{ contact.how_we_met if contact and contact.how_we_met else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Zajmy</label>
+                <input type="text" name="interests" value="{{ contact.interests if contact and contact.interests else '' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Cile (co pro nej/ni chces udelat)</label>
+            <input type="text" name="goals" value="{{ contact.goals if contact and contact.goals else '' }}">
+        </div>
+        <div class="form-group">
+            <label>Poznamky</label>
+            <textarea name="notes">{{ contact.notes if contact and contact.notes else '' }}</textarea>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary">{{ 'Ulozit zmeny' if contact else 'Pridat kontakt' }}</button>
+            <a href="{{ url_for('contact_detail', contact_id=contact.id) if contact else url_for('contacts') }}" class="btn">Zrusit</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

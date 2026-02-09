@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <a href="{{ url_for('contact_new') }}" class="btn btn-primary">+ Novy kontakt</a>
+</div>
+
+<div class="grid grid-4">
+    <div class="stat">
+        <div class="number">{{ stats.total_contacts }}</div>
+        <div class="label">Kontaktu celkem</div>
+    </div>
+    <div class="stat">
+        <div class="number">{{ stats.interactions_this_week }}</div>
+        <div class="label">Interakci tento tyden</div>
+    </div>
+    <div class="stat">
+        <div class="number" style="color: {% if stats.pending_followups > 0 %}var(--warning){% else %}var(--success){% endif %}">{{ stats.pending_followups }}</div>
+        <div class="label">Cekajicich follow-upu</div>
+    </div>
+    <div class="stat">
+        <div class="number">{{ stats.generosity_this_month }}</div>
+        <div class="label">Aktu stedrosti (mesic)</div>
+    </div>
+</div>
+
+<div class="grid grid-2" style="margin-top: 1.5rem;">
+    <div class="card">
+        <h2>Kontakty podle kruhu</h2>
+        <table>
+            <tr>
+                <td><span class="badge badge-inner">Vnitrni kruh</span></td>
+                <td style="text-align:right; font-weight:700">{{ stats.circles.get('inner_circle', 0) }}</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-close">Blizci</span></td>
+                <td style="text-align:right; font-weight:700">{{ stats.circles.get('close', 0) }}</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-acquaintance">Znami</span></td>
+                <td style="text-align:right; font-weight:700">{{ stats.circles.get('acquaintance', 0) }}</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-dormant">Spici kontakty</span></td>
+                <td style="text-align:right; font-weight:700">{{ stats.circles.get('dormant', 0) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Aktivita</h2>
+        <table>
+            <tr><td>Interakce tento mesic</td><td style="text-align:right; font-weight:700">{{ stats.interactions_this_month }}</td></tr>
+            <tr><td>Stedrost tento mesic</td><td style="text-align:right; font-weight:700">{{ stats.generosity_this_month }}</td></tr>
+            <tr>
+                <td>Zpozedene follow-upy</td>
+                <td style="text-align:right; font-weight:700; color: {% if stats.overdue_followups > 0 %}var(--danger){% else %}var(--success){% endif %}">
+                    {{ stats.overdue_followups }}
+                </td>
+            </tr>
+            <tr><td>Otevrene cile</td><td style="text-align:right; font-weight:700">{{ stats.pending_goals }}</td></tr>
+        </table>
+    </div>
+</div>
+
+{% if followups %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Cekajici follow-upy</h2>
+    <table>
+        <thead><tr><th>Kontakt</th><th>Typ</th><th>Datum</th><th>Do kdy</th><th></th></tr></thead>
+        <tbody>
+        {% for f in followups[:5] %}
+        <tr>
+            <td><a href="{{ url_for('contact_detail', contact_id=f.contact_id) }}">{{ f.contact_name }}</a></td>
+            <td>{{ f.type|interaction_label }}</td>
+            <td>{{ f.date }}</td>
+            <td>
+                {% if f.follow_up_by and f.follow_up_by < today %}
+                    <span class="badge badge-danger">{{ f.follow_up_by }}</span>
+                {% elif f.follow_up_by %}
+                    {{ f.follow_up_by }}
+                {% else %}-{% endif %}
+            </td>
+            <td>
+                <form method="post" action="{{ url_for('followup_done', interaction_id=f.id) }}" style="display:inline">
+                    <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+                    <button type="submit" class="btn btn-sm">Hotovo</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if followups|length > 5 %}
+    <p style="margin-top:0.75rem"><a href="{{ url_for('followups') }}">Zobrazit vse ({{ followups|length }})</a></p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if stats.dormant_contacts %}
+<div class="card" style="border-color: var(--warning);">
+    <h2 style="color: var(--warning)">Spici kontakty (90+ dni bez interakce)</h2>
+    <p style="color: var(--text-dim); margin-bottom: 1rem;">Obnov kontakt - staci kratky email nebo kava!</p>
+    <table>
+        <thead><tr><th>Jmeno</th><th>Kruh</th><th>Posledni interakce</th></tr></thead>
+        <tbody>
+        {% for c in stats.dormant_contacts %}
+        <tr>
+            <td><a href="{{ url_for('contact_detail', contact_id=c.id) }}">{{ c.name }}</a></td>
+            <td><span class="badge badge-{{ c.circle }}">{{ c.circle|circle_label }}</span></td>
+            <td>{{ c.last_interaction or 'zadna' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Follow-upy{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Cekajici follow-upy</h1>
+</div>
+
+<div class="tip-card" style="margin-bottom: 1.5rem;">
+    <h3>Pravidlo 24 hodin</h3>
+    <p>Po kazdem setkani posli follow-up do 24 hodin. Kratky email, SMS, nebo LinkedIn zprava. Ukazuje to, ze ti na vztahu zalezi.</p>
+</div>
+
+{% if followups %}
+<div class="card" style="padding: 0;">
+    <table>
+        <thead>
+            <tr><th>Kontakt</th><th>Kruh</th><th>Typ</th><th>Datum interakce</th><th>Follow-up do</th><th>Stav</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for f in followups %}
+        <tr>
+            <td><a href="{{ url_for('contact_detail', contact_id=f.contact_id) }}" style="font-weight: 600;">{{ f.contact_name }}</a></td>
+            <td><span class="badge badge-{{ f.circle }}">{{ f.circle|circle_label }}</span></td>
+            <td>{{ f.type|interaction_label }}</td>
+            <td>{{ f.date }}</td>
+            <td>
+                {% if f.follow_up_by and f.follow_up_by < today %}
+                    <span class="badge badge-danger">{{ f.follow_up_by }}</span>
+                {% else %}
+                    {{ f.follow_up_by or '-' }}
+                {% endif %}
+            </td>
+            <td>
+                {% if f.follow_up_by and f.follow_up_by < today %}
+                    <span class="badge badge-danger">Zpozden</span>
+                {% else %}
+                    <span class="badge badge-warning">Ceka</span>
+                {% endif %}
+            </td>
+            <td>
+                <form method="post" action="{{ url_for('followup_done', interaction_id=f.id) }}" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-primary">Hotovo</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty">
+    <p style="font-size: 1.2rem;">Zadne cekajici follow-upy!</p>
+    <p style="margin-top: 0.5rem;">Skvela prace - vsechny vztahy jsou osetrene.</p>
+</div>
+{% endif %}
+{% endblock %}

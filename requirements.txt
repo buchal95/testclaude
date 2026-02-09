@@ -1,2 +1,4 @@
 click>=8.0
 rich>=13.0
+flask>=3.0
+gunicorn>=21.0

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Cile{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Cile vztahu</h1>
+    <div style="display: flex; gap: 0.5rem;">
+        {% if show_all %}
+        <a href="{{ url_for('goals') }}" class="btn">Jen otevrene</a>
+        {% else %}
+        <a href="{{ url_for('goals', all='1') }}" class="btn">Zobrazit vse</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if goals %}
+<div class="card" style="padding: 0;">
+    <table>
+        <thead><tr><th>Kontakt</th><th>Cil</th><th>Do kdy</th><th>Stav</th><th></th></tr></thead>
+        <tbody>
+        {% for g in goals %}
+        <tr>
+            <td><a href="{{ url_for('contact_detail', contact_id=g.contact_id) }}" style="font-weight: 600;">{{ g.contact_name }}</a></td>
+            <td>{{ g.goal }}</td>
+            <td>{{ g.target_date or '-' }}</td>
+            <td>
+                {% if g.completed %}
+                    <span class="badge badge-success">Splneno</span>
+                {% else %}
+                    <span class="badge badge-warning">Otevreny</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if not g.completed %}
+                <form method="post" action="{{ url_for('goal_done', goal_id=g.id) }}" style="display:inline">
+                    <input type="hidden" name="next" value="{{ url_for('goals') }}">
+                    <button type="submit" class="btn btn-sm">Splnit</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty">
+    <p>Zadne {{ 'cile' if show_all else 'otevrene cile' }}.</p>
+    <p style="margin-top: 0.5rem;">Pridej cile u jednotlivych kontaktu.</p>
+</div>
+{% endif %}
+{% endblock %}

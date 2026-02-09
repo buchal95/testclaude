@@ -268,7 +268,7 @@ def create_app():
     @login_required
     def followup_done(interaction_id):
         db.mark_followup_done(interaction_id, g.user["id"])
-        flash("Follow-up splněn!", "success")
+        flash("Follow-up vyřízen!", "success")
         next_url = request.form.get("next", url_for("followups"))
         return redirect(next_url)
 
@@ -288,7 +288,7 @@ def create_app():
             category=request.form.get("category") or None,
             date=request.form.get("date") or None,
         )
-        flash("Štědrost zaznamenána!", "success")
+        flash("Dobrý skutek zaznamenán!", "success")
         return redirect(url_for("contact_detail", contact_id=contact_id))
 
     # --- Goals ---

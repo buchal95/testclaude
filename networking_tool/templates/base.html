@@ -256,7 +256,7 @@
             font-weight: 600;
             letter-spacing: 0.02em;
         }
-        .badge-inner {
+        .badge-inner_circle {
             background: rgba(192, 132, 252, 0.15);
             color: var(--inner);
             box-shadow: 0 0 8px rgba(192, 132, 252, 0.1);
@@ -560,7 +560,7 @@
         </div>
         <div class="user-area">
             <span class="user-name">{{ current_user.display_name or current_user.username }}</span>
-            <a href="{{ url_for('logout') }}" class="btn btn-sm">Odhlásit</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm">Odhlásit se</a>
         </div>
         {% endif %}
     </nav>

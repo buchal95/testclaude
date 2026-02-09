@@ -10,7 +10,6 @@ COPY . .
 ENV DATABASE_PATH=/app/data/networking.db
 RUN mkdir -p /app/data
 
-ENV PORT=8080
 EXPOSE 8080
 
-CMD gunicorn --bind 0.0.0.0:$PORT networking_tool.wsgi:app
+CMD ["/bin/sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} networking_tool.wsgi:app"]

@@ -5,7 +5,7 @@
     <h1>{{ contact.name }}</h1>
     <div style="display: flex; gap: 0.5rem;">
         <a href="{{ url_for('contact_edit', contact_id=contact.id) }}" class="btn">Upravit</a>
-        <form method="post" action="{{ url_for('contact_delete', contact_id=contact.id) }}" onsubmit="return confirm('Opravdu smazat kontakt?')">
+        <form method="post" action="{{ url_for('contact_delete', contact_id=contact.id) }}" class="confirm-form" data-confirm-title="Smazat kontakt?" data-confirm-msg="Kontakt bude trvale odstraněn včetně všech interakcí a dat." data-confirm-btn="Smazat">
             <button type="submit" class="btn btn-danger">Smazat</button>
         </form>
     </div>

@@ -45,7 +45,7 @@
         <button type="submit" name="action" value="move_circle" class="btn btn-sm">Přesunout do kruhu</button>
         <input type="text" name="bulk_tag" placeholder="Tag..." style="width: 100px; padding: 0.35rem 0.5rem; font-size: 0.8rem;">
         <button type="submit" name="action" value="add_tag" class="btn btn-sm">Přidat tag</button>
-        <button type="submit" name="action" value="delete" class="btn btn-sm btn-danger" onclick="return confirm('Opravdu smazat vybrané kontakty?')">Smazat</button>
+        <button type="button" class="btn btn-sm btn-danger" id="bulkDeleteBtn">Smazat</button>
     </form>
 </div>
 
@@ -171,6 +171,22 @@
     checks.forEach(function(cb){
         cb.addEventListener('change', updateBulk);
     });
+
+    // Bulk delete with custom confirm
+    var bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function(){
+            var count = document.querySelectorAll('.row-check:checked').length;
+            showConfirm('Smazat kontakty?', 'Bude smazáno ' + count + ' kontaktů včetně všech jejich dat. Tato akce je nevratná.', 'Smazat').then(function(ok){
+                if (ok) {
+                    var hidden = document.createElement('input');
+                    hidden.type = 'hidden'; hidden.name = 'action'; hidden.value = 'delete';
+                    document.getElementById('bulkForm').appendChild(hidden);
+                    document.getElementById('bulkForm').submit();
+                }
+            });
+        });
+    }
 })();
 </script>
 {% endblock %}

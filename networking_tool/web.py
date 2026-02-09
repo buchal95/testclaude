@@ -50,9 +50,9 @@ def create_app():
     app = Flask(__name__)
     app.secret_key = os.environ.get("SECRET_KEY", "dev-networking-tool-key")
 
-    db_path = os.environ.get("DATABASE_PATH")
-    if db_path:
-        db.DB_PATH = db_path
+    database_url = os.environ.get("DATABASE_URL", "")
+    if database_url:
+        db.DATABASE_URL = database_url
     db.init_db()
 
     @app.before_request
